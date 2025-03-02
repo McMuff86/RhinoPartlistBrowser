@@ -1,0 +1,27 @@
+Zuletzt aktualisiert: 02.03.2024
+
+RhinoPartlistBrowser/
+├── projektstruktur.txt (diese Datei)
+├── projectgoals.md (Projektziele und Leitfaden)
+├── AI_README.md (Anweisungen für den AI Coding Agent)
+├── RhinoPartlistBrowserPlugin.cs (Plugin-Hauptklasse)
+├── RParts.cs (Plugin-Komponenten)
+├── RhinoPartlistBrowser.csproj (Projektdatei)
+├── RhinoPartlistBrowser.sln (Solution-Datei)
+├── thoughtprocess/ (Dokumentation des Denkprozesses)
+│   └── README.md (Informationen zum Ordner)
+├── examplecode/ (Referenzmaterial)
+│   ├── README.md (Informationen zum Ordner)
+│   ├── python/ (Ursprünglicher Python-Code)
+│   │   └── README.md
+│   ├── csharp/ (C#-Beispiele und portierter Code)
+│   │   └── README.md
+│   └── rhino/ (Rhino-spezifische Snippets)
+│       └── README.md
+├── src/ (Hauptordner für den Quellcode des RhinoPlugins)
+│   └── README.md (Informationen zum Ordner)
+├── Properties/ (Projekteigenschaften)
+├── obj/ (Kompilierungsobjekte)
+├── bin/ (Binärdateien)
+├── EmbeddedResources/ (Eingebettete Ressourcen)
+└── .vscode/ (VS Code Konfigurationsdateien) 

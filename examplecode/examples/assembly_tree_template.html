@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Assembly Tree</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+    h1 {
+      color: #0055a5;
+    }
+    p.summary {
+      font-size: 1.1em;
+      margin-bottom: 20px;
+    }
+    ul {
+      list-style-type: none;
+      padding-left: 20px;
+    }
+    li {
+      margin: 5px 0;
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .toggle {
+      cursor: pointer;
+    }
+    .toggle::before {
+      content: "▸ ";
+      color: #0055a5;
+    }
+    .expanded::before {
+      content: "▾ ";
+      color: #0055a5;
+    }
+    a {
+      color: #0055a5;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .attachment-section {
+      margin-top: 30px;
+    }
+    .attachment-section h2 {
+      color: #0055a5;
+    }
+    .embedded-image {
+      max-width: 90%;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      padding: 4px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Assembly Tree for <span id="assembly-name">AssemblyName</span></h1>
+  <p class="summary">Total Subassemblies: <span id="total-subassemblies">0</span>, Total Parts: <span id="total-parts">0</span></p>
+  
+  <ul id="assembly-tree">
+    <!-- Hier wird die Baumstruktur dynamisch eingefügt -->
+  </ul>
+
+  <div class="attachment-section" id="attachment-container" style="display: none;">
+    <h2>Attachments</h2>
+    <ul id="attachments-list">
+      <!-- Hier werden Anhänge eingefügt -->
+    </ul>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function(){
+      // Beispiel für Baumstruktur-Daten
+      const treeData = {
+        "name": "Beispiel-Assembly",
+        "type": "MasterBlock",
+        "count": 1,
+        "children": [
+          {
+            "name": "Unterbaugruppe 1",
+            "type": "BlockInstance",
+            "count": 2,
+            "children": [
+              {
+                "name": "Teil A",
+                "type": "Geometry",
+                "count": 4,
+                "children": []
+              },
+              {
+                "name": "Teil B",
+                "type": "Geometry",
+                "count": 2,
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "Teil C",
+            "type": "Geometry",
+            "count": 1,
+            "children": []
+          }
+        ]
+      };
+
+      // Funktion zum Berechnen der Zusammenfassung
+      function computeSummary(node) {
+        if (!node.children || node.children.length === 0) {
+          return { parts: node.count, subassemblies: 0 };
+        } else {
+          let totalParts = 0;
+          let totalSubassemblies = 0;
+          
+          for (const child of node.children) {
+            if (child.children && child.children.length > 0) {
+              totalSubassemblies += child.count;
+            }
+            const childSummary = computeSummary(child);
+            totalParts += childSummary.parts;
+            totalSubassemblies += childSummary.subassemblies;
+          }
+          
+          return { parts: totalParts, subassemblies: totalSubassemblies };
+        }
+      }
+
+      // Funktion zum Generieren der HTML-Liste
+      function generateHtmlList(node) {
+        const summary = node.children && node.children.length > 0 ? computeSummary(node) : null;
+        let text = `${node.name} [${node.type}] x${node.count}`;
+        
+        if (summary) {
+          text += ` (Subassemblies: ${summary.subassemblies}, Parts: ${summary.parts})`;
+        }
+        
+        let html = "<li>";
+        
+        if (node.children && node.children.length > 0) {
+          html += `<span class="toggle">${text}</span><ul style="display:none;">`;
+          
+          for (const child of node.children) {
+            html += generateHtmlList(child);
+          }
+          
+          html += "</ul>";
+        } else {
+          html += `<span>${text}</span>`;
+        }
+        
+        html += "</li>";
+        return html;
+      }
+
+      // Funktion zum Rendern des Baums
+      function renderTree(data) {
+        document.getElementById('assembly-name').textContent = data.name;
+        
+        const summary = computeSummary(data);
+        document.getElementById('total-subassemblies').textContent = summary.subassemblies;
+        document.getElementById('total-parts').textContent = summary.parts;
+        
+        const treeContainer = document.getElementById('assembly-tree');
+        treeContainer.innerHTML = generateHtmlList(data);
+        
+        // Event-Listener für Toggle-Elemente hinzufügen
+        const toggles = document.querySelectorAll("span.toggle");
+        toggles.forEach(function(toggle) {
+          toggle.addEventListener("click", function(e) {
+            const next = toggle.nextElementSibling;
+            if (next && next.tagName.toLowerCase() === "ul") {
+              if (next.style.display === "none") {
+                next.style.display = "block";
+                toggle.classList.add("expanded");
+              } else {
+                next.style.display = "none";
+                toggle.classList.remove("expanded");
+              }
+            }
+            e.stopPropagation();
+          });
+        });
+      }
+
+      // Funktion zum Hinzufügen von Anhängen
+      function addAttachments(attachments) {
+        if (attachments && attachments.length > 0) {
+          const attachmentContainer = document.getElementById('attachment-container');
+          attachmentContainer.style.display = 'block';
+          
+          const attachmentsList = document.getElementById('attachments-list');
+          
+          for (const attachment of attachments) {
+            const li = document.createElement('li');
+            
+            if (attachment.type === 'pdf') {
+              li.innerHTML = `<a href="${attachment.path}" target="_blank">${attachment.name}</a>`;
+            } else if (attachment.type === 'image') {
+              li.innerHTML = `<img class="embedded-image" src="${attachment.data}" alt="${attachment.name}">`;
+            }
+            
+            attachmentsList.appendChild(li);
+          }
+        }
+      }
+
+      // Diese Funktionen würden mit realen Daten vom C#-Code aufgerufen
+      renderTree(treeData);
+      
+      // Beispiel für Anhänge
+      /*
+      addAttachments([
+        { type: 'pdf', path: 'example.pdf', name: 'Beispiel PDF' },
+        { type: 'image', data: 'data:image/png;base64,...', name: 'Beispielbild' }
+      ]);
+      */
+    });
+  </script>
+</body>
+</html> 

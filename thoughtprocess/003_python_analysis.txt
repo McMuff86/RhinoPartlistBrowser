@@ -1,0 +1,108 @@
+# 003 - Analyse des Python-Codes und Portierungsplan
+
+Datum: 02.03.2024
+
+## Analyse des Python-Codes
+
+Nach der Analyse des Python-Codes `Rhino_AssemblyTree_v0.4.py` können wir folgende Hauptkomponenten identifizieren:
+
+### 1. Datenstrukturen
+
+- **AssemblyNode**: Eine Klasse, die einen Knoten im Assembly-Baum repräsentiert.
+  - Speichert Name und Typ des Knotens (MasterBlock, BlockInstance, Geometry)
+  - Zählt Vorkommen eines bestimmten Knotens (Aggregation)
+  - Verwaltet untergeordnete Knoten in einem Dictionary
+
+### 2. Baumaufbau-Funktionen
+
+- **build_tree**: Baut den Assembly-Baum rekursiv auf, indem es durch die Blockdefinitionen navigiert
+- **build_assembly_tree**: Erstellt den Wurzelknoten und startet den rekursiven Aufbau
+
+### 3. Analysefunktionen
+
+- **compute_effective_summary**: Berechnet die Anzahl der Teile und Untergruppen für einen Knoten
+- **collect_leaf_nodes**: Sammelt alle Blattknoten (ohne Kinder) aus dem Baum
+
+### 4. Ausgabefunktionen
+
+- **print_tree**: Gibt den Baum in der Kommandozeile aus
+- **assembly_node_to_dict**: Konvertiert den Baum in ein Dictionary für die JSON-Serialisierung
+- **process_block**: Erzeugt eine flache Liste der Teile für eine CSV-Datei
+- **generate_html_list**: Erzeugt eine HTML-Darstellung des Baums
+- **generate_full_html**: Erzeugt eine vollständige HTML-Seite mit dem Baum und Anhängen
+
+### 5. Hauptfunktion
+
+- **main**: Koordiniert den gesamten Prozess:
+  - Auswahl eines Blocks durch den Benutzer
+  - Abfragen der Optionen (Explodieren von Blöcken)
+  - Auswahl eines Ausgabeverzeichnisses
+  - Generierung und Speicherung verschiedener Ausgabeformate (CSV, JSON, HTML)
+  - Optionale Einbindung von Anhängen (PDF, Bilder)
+
+## Portierung nach C#
+
+Für die Portierung nach C# haben wir bereits einige Beispiel-Klassen erstellt:
+
+### 1. BOMGenerator
+
+Die `BOMGenerator`-Klasse ist für die Erzeugung des Assembly-Baums und die Analyse der Daten zuständig:
+
+- Implementiert die `AssemblyNode`-Klasse als verschachtelte Klasse
+- Portiert die Baumaufbau-Funktionen (`BuildTree`, `BuildAssemblyTree`)
+- Portiert die Analysefunktionen (`ComputeEffectiveSummary`, `CollectLeafNodes`)
+- Portiert die Konvertierungsfunktion für JSON (`AssemblyNodeToDict`)
+- Bietet eine öffentliche Methode `GenerateBOM` für die Hauptfunktionalität
+
+### 2. BrowserDisplay
+
+Die `BrowserDisplay`-Klasse ist für die Anzeige des Assembly-Baums im Browser zuständig:
+
+- Implementiert die HTML-Generierung mit der Baumstruktur
+- Unterstützt die Einbindung von Anhängen (PDF, Bilder)
+- Konvertiert Bilder automatisch zu Base64 für die Einbettung
+- Öffnet das erzeugte HTML im Browser
+
+### 3. RParts
+
+Die `RParts`-Klasse ist ein Rhino-Befehl, der die beiden anderen Klassen integriert:
+
+- Implementiert die Benutzerinteraktion (Auswahl des Blocks, Optionen)
+- Verwendet die `BOMGenerator`-Klasse zur Erzeugung der Daten
+- Verwendet die `BrowserDisplay`-Klasse zur Anzeige der Daten
+
+## Offene Punkte und nächste Schritte
+
+### 1. Implementierung des finalen Plugins
+
+- Integration der erstellten Beispiel-Klassen in die bestehende Plugin-Struktur
+- Anpassung der RParts.cs-Datei im Hauptprojekt
+- Hinzufügen der BOMGenerator und BrowserDisplay Klassen zum Hauptprojekt
+
+### 2. Zusätzliche Features aus dem Python-Skript
+
+- CSV-Export-Funktionalität hinzufügen
+- Speichern des JSON-Formats
+- Integration von Bildern und PDF-Dateien als Anhänge
+
+### 3. Verbesserungen und Erweiterungen
+
+- Verbesserte Fehlerbehandlung und Benutzerrückmeldung
+- Optional: Speichermöglichkeit für die HTML-Ansicht direkt aus dem Browser
+- Optional: Filteroptionen für die Stückliste
+- Optional: Sortierung und Gruppierung der Teile
+
+### 4. Tests und Optimierung
+
+- Testen mit verschiedenen Blockstrukturen und -größen
+- Optimierung der Leistung bei großen Modellen
+- Behandlung von Spezialfällen (z.B. zyklische Referenzen)
+
+## Testplan
+
+1. Erstellen eines einfachen Blocks mit mehreren Unterblöcken
+2. Testen des `RParts`-Befehls mit diesem Block
+3. Überprüfen der generierten HTML-Ausgabe
+4. Testen der verschiedenen Optionen (Explodieren, Anhänge)
+
+Bei der Implementierung müssen wir darauf achten, dass die Portierung so nah wie möglich am Original bleibt, um eine konsistente Funktionalität zu gewährleisten, aber gleichzeitig die Möglichkeiten und Konventionen von C# nutzen. 

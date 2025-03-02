@@ -1,0 +1,66 @@
+# 002 - Analyse der vorhandenen Code-Dateien
+
+Datum: 02.03.2024
+
+## Analyse der vorhandenen Code-Dateien
+
+### RhinoPartlistBrowserPlugin.cs
+Die Datei `RhinoPartlistBrowserPlugin.cs` enthält die Haupt-Plugin-Klasse, die von `Rhino.PlugIns.PlugIn` erbt. Diese Klasse ist die Grundlage für das Plugin und wird von Rhino automatisch instanziiert. Sie enthält:
+
+- Einen Konstruktor, der die Instance-Eigenschaft auf die aktuelle Instanz setzt
+- Eine statische Instance-Eigenschaft, die den Zugriff auf die Plugin-Instanz ermöglicht
+- Kommentare, die darauf hinweisen, dass hier Methoden überschrieben werden können, um das Plugin-Verhalten zu ändern
+
+Diese Datei stellt die grundlegende Plugin-Infrastruktur bereit, enthält aber noch keine spezifische Funktionalität für die BOM-Anzeige oder das Öffnen eines Browserfensters.
+
+### RParts.cs
+Die Datei `RParts.cs` enthält eine Rhino-Befehlsklasse namens `RParts`, die von `Command` erbt. Diese Klasse implementiert einen Rhino-Befehl, der:
+
+- Zwei Punkte vom Benutzer abfragt
+- Eine Linie zwischen diesen Punkten zeichnet
+- Die Linie zum Dokument hinzufügt
+
+Diese Implementierung ist ein einfaches Beispiel für einen Rhino-Befehl und hat noch nichts mit der BOM-Anzeige oder dem Browserfenster zu tun. Sie muss angepasst oder erweitert werden, um die gewünschte Funktionalität zu implementieren.
+
+## Geplante Änderungen
+
+### Für RhinoPartlistBrowserPlugin.cs
+- Die Plugin-Klasse kann weitgehend unverändert bleiben, da sie die grundlegende Plugin-Infrastruktur bereitstellt
+- Bei Bedarf können wir hier Plugin-weite Optionen oder Einstellungen hinzufügen
+
+### Für RParts.cs
+- Diese Klasse muss grundlegend angepasst werden, um statt einer Linie zu zeichnen:
+  1. Eine BOM aus den ausgewählten Objekten zu generieren
+  2. Die BOM in einem geeigneten Format (z.B. HTML) zu speichern
+  3. Ein Browserfenster zu öffnen, das die BOM anzeigt
+
+## Neue Dateien, die erstellt werden müssen
+
+1. **BOMGenerator.cs**: Eine Klasse zur Erzeugung der Bill of Materials aus Rhino-Objekten
+   - Methoden zur Extraktion von Teildaten aus Rhino-Objekten
+   - Logik zur Gruppierung und Zusammenfassung der Teile
+   - Funktionen zur Formatierung der BOM
+
+2. **BrowserDisplay.cs**: Eine Klasse zum Anzeigen der BOM in einem Browserfenster
+   - Methoden zum Öffnen eines Browserfensters
+   - Funktionen zur Darstellung der BOM im Browser
+   - Eventuell Interaktionslogik
+
+## Nächste Schritte
+
+1. **Recherche zu Browserfenster in Rhino-Plugins**:
+   - Möglichkeiten zum Öffnen eines Browserfensters aus einem Rhino-Plugin recherchieren
+   - Beste Methode für die Integration identifizieren
+
+2. **Analyse für BOM-Generierung**:
+   - Logik für die Extraktion von Teildaten aus Rhino-Objekten verstehen
+   - Konzept für die BOM-Struktur entwickeln
+
+3. **Prototyp-Implementierung**:
+   - Einfache Implementierung des Browserfensters erstellen
+   - Grundlegende BOM-Generierung implementieren
+
+4. **Integration**:
+   - BOM-Generierung und Browseranzeige in den RParts-Befehl integrieren
+
+Diese Analyse bildet die Grundlage für die nächsten Entwicklungsschritte. Der Fokus liegt zunächst auf der Recherche zur Browserintegration und der Konzeptentwicklung für die BOM-Generierung. 

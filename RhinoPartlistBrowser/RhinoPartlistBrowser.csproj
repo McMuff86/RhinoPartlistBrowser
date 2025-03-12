@@ -36,10 +36,10 @@
   
   <ItemGroup>
     <Reference Include="Eto">
-      <HintPath>..\..\..\..\..\..\Program Files\Rhino 7\System\Eto.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Rhino 8\System\Eto.dll</HintPath>
     </Reference>
     <Reference Include="RhinoCommon">
-      <HintPath>..\..\..\..\..\..\Program Files\Rhino 7\System\RhinoCommon.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Rhino 8\System\RhinoCommon.dll</HintPath>
     </Reference>
   </ItemGroup>
   

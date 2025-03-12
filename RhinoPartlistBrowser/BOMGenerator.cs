@@ -33,11 +33,17 @@ namespace RhinoPartlistBrowser
             /// <summary>Name des Knotens</summary>
             public string Name { get; set; }
             
+            /// <summary>Name aus dem Namensfeld (wenn vorhanden)</summary>
+            public string DisplayName { get; set; }
+            
             /// <summary>Typ des Knotens (z.B. "MasterBlock", "BlockInstance", "Geometry")</summary>
             public string NodeType { get; set; }
             
             /// <summary>Anzahl der Vorkommen (Aggregation)</summary>
             public int Count { get; set; }
+            
+            /// <summary>Benutzerdefinierte Attribute (UserText) für diesen Knoten</summary>
+            public Dictionary<string, string> UserAttributes { get; } = new Dictionary<string, string>();
             
             /// <summary>Untergeordnete Knoten</summary>
             public Dictionary<(string, string), AssemblyNode> Children { get; } = new Dictionary<(string, string), AssemblyNode>();
@@ -50,6 +56,21 @@ namespace RhinoPartlistBrowser
             public AssemblyNode(string name, string nodeType)
             {
                 Name = name;
+                NodeType = nodeType;
+                Count = 1;
+                DisplayName = null;
+            }
+
+            /// <summary>
+            /// Konstruktor mit DisplayName
+            /// </summary>
+            /// <param name="name">Name des Knotens</param>
+            /// <param name="displayName">Zusätzlicher Anzeigename</param>
+            /// <param name="nodeType">Typ des Knotens</param>
+            public AssemblyNode(string name, string displayName, string nodeType)
+            {
+                Name = name;
+                DisplayName = displayName;
                 NodeType = nodeType;
                 Count = 1;
             }
@@ -75,6 +96,29 @@ namespace RhinoPartlistBrowser
                     return newChild;
                 }
             }
+
+            /// <summary>
+            /// Fügt ein Kind hinzu oder gibt ein vorhandenes zurück, mit DisplayName
+            /// </summary>
+            /// <param name="name">Name des Kindes</param>
+            /// <param name="displayName">Zusätzlicher Anzeigename</param>
+            /// <param name="nodeType">Typ des Kindes</param>
+            /// <returns>Das Kind-Node</returns>
+            public AssemblyNode AddOrGetChild(string name, string displayName, string nodeType)
+            {
+                var key = (name, nodeType);
+                if (Children.ContainsKey(key))
+                {
+                    Children[key].Count++;
+                    return Children[key];
+                }
+                else
+                {
+                    var newChild = new AssemblyNode(name, displayName, nodeType);
+                    Children[key] = newChild;
+                    return newChild;
+                }
+            }
         }
 
         /// <summary>
@@ -96,7 +140,35 @@ namespace RhinoPartlistBrowser
                     {
                         int childInstDefIndex = instanceObj.InstanceDefinition.Index;
                         InstanceDefinition childInstDef = _doc.InstanceDefinitions[childInstDefIndex];
-                        AssemblyNode childNode = parentNode.AddOrGetChild(childInstDef.Name, "BlockInstance");
+                        
+                        // Namensfeld-Wert extrahieren, falls vorhanden
+                        string displayName = null;
+                        if (!string.IsNullOrEmpty(instanceObj.Name))
+                        {
+                            displayName = instanceObj.Name;
+                        }
+                        
+                        // Wenn wir einen DisplayName haben und es sich um einen Leaf-Node handelt,
+                        // verwenden wir die Methode mit dem zusätzlichen DisplayName-Parameter
+                        bool isLeafNode = !childInstDef.GetObjects().Any(o => o is InstanceObject);
+                        
+                        AssemblyNode childNode;
+                        if (isLeafNode && !string.IsNullOrEmpty(displayName))
+                        {
+                            childNode = parentNode.AddOrGetChild(childInstDef.Name, displayName, "BlockInstance");
+                        }
+                        else
+                        {
+                            childNode = parentNode.AddOrGetChild(childInstDef.Name, "BlockInstance");
+                        }
+                        
+                        // UserText-Attribute extrahieren, falls es sich um einen Leaf-Node handelt,
+                        // unabhängig davon, ob ein DisplayName vorhanden ist
+                        if (isLeafNode)
+                        {
+                            ExtractUserTextAttributes(instanceObj, childNode);
+                        }
+                        
                         BuildTree(childInstDefIndex, explode, childNode);
                     }
                     else
@@ -105,7 +177,27 @@ namespace RhinoPartlistBrowser
                         {
                             GeometryBase geom = obj.Geometry;
                             string geomType = geom != null ? geom.GetType().Name : "Unknown";
-                            parentNode.AddOrGetChild($"Geometry ({geomType})", "Geometry");
+                            
+                            // Namensfeld-Wert für normale Geometrie
+                            string displayName = null;
+                            AssemblyNode geometryNode;
+                            
+                            if (obj is RhinoObject rhinoObj && !string.IsNullOrEmpty(rhinoObj.Name))
+                            {
+                                displayName = rhinoObj.Name;
+                                geometryNode = parentNode.AddOrGetChild($"Geometry ({geomType})", displayName, "Geometry");
+                            }
+                            else
+                            {
+                                geometryNode = parentNode.AddOrGetChild($"Geometry ({geomType})", "Geometry");
+                            }
+                            
+                            // UserText-Attribute extrahieren, falls das Objekt ein RhinoObject ist,
+                            // unabhängig davon, ob ein DisplayName vorhanden ist
+                            if (obj is RhinoObject rhinoObject)
+                            {
+                                ExtractUserTextAttributes(rhinoObject, geometryNode);
+                            }
                         }
                     }
                 }
@@ -120,7 +212,27 @@ namespace RhinoPartlistBrowser
                         {
                             GeometryBase geom = obj.Geometry;
                             string geomType = geom != null ? geom.GetType().Name : "Unknown";
-                            parentNode.AddOrGetChild($"Geometry ({geomType})", "Geometry");
+                            
+                            // Namensfeld-Wert für normale Geometrie
+                            string displayName = null;
+                            AssemblyNode geometryNode;
+                            
+                            if (obj is RhinoObject rhinoObj && !string.IsNullOrEmpty(rhinoObj.Name))
+                            {
+                                displayName = rhinoObj.Name;
+                                geometryNode = parentNode.AddOrGetChild($"Geometry ({geomType})", displayName, "Geometry");
+                            }
+                            else
+                            {
+                                geometryNode = parentNode.AddOrGetChild($"Geometry ({geomType})", "Geometry");
+                            }
+                            
+                            // UserText-Attribute extrahieren, falls das Objekt ein RhinoObject ist,
+                            // unabhängig davon, ob ein DisplayName vorhanden ist
+                            if (obj is RhinoObject rhinoObject)
+                            {
+                                ExtractUserTextAttributes(rhinoObject, geometryNode);
+                            }
                         }
                     }
                 }
@@ -231,6 +343,18 @@ namespace RhinoPartlistBrowser
                 { "count", node.Count },
                 { "children", node.Children.Values.Select(child => AssemblyNodeToDict(child)).ToList() }
             };
+
+            // DisplayName hinzufügen, falls vorhanden
+            if (!string.IsNullOrEmpty(node.DisplayName))
+            {
+                result.Add("displayName", node.DisplayName);
+            }
+            
+            // UserAttributes hinzufügen, falls vorhanden
+            if (node.UserAttributes.Count > 0)
+            {
+                result.Add("userAttributes", node.UserAttributes);
+            }
 
             return result;
         }
@@ -472,6 +596,32 @@ namespace RhinoPartlistBrowser
             {
                 RhinoApp.WriteLine($"Fehler beim Exportieren der Blattknoten-JSON: {ex.Message}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Extrahiert UserText-Attribute aus einem Rhino-Objekt und fügt sie zu einem AssemblyNode hinzu
+        /// </summary>
+        /// <param name="rhinoObj">Das Rhino-Objekt</param>
+        /// <param name="node">Der AssemblyNode</param>
+        private void ExtractUserTextAttributes(RhinoObject rhinoObj, AssemblyNode node)
+        {
+            // In Rhino 7/8 werden benutzerdefinierte Attribute über GetUserStrings() abgerufen
+            var userStrings = rhinoObj.Attributes.GetUserStrings();
+            if (userStrings != null && userStrings.Count > 0)
+            {
+                foreach (string key in userStrings.AllKeys)
+                {
+                    // Spezielle interne Keys ignorieren
+                    if (key == "$block-instance-original-object-id$")
+                        continue;
+                        
+                    string value = userStrings[key];
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        node.UserAttributes[key] = value;
+                    }
+                }
             }
         }
     }

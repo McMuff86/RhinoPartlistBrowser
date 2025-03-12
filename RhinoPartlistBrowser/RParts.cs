@@ -66,19 +66,47 @@ namespace RhinoPartlistBrowser
             if (optionResult != Result.Success)
                 return Result.Cancel;
 
+            // Block-Ansichten erstellen Option
+            bool captureViews = false;
+            optionResult = RhinoGet.GetBool("Ansichten des Blocks erstellen (Front, Links, Rechts, Oben)", false, "Nein", "Ja", ref captureViews);
+            if (optionResult != Result.Success)
+                return Result.Cancel;
+
             // BOM-Generator erstellen
             var bomGenerator = new BOMGenerator(doc);
 
             // Baumstruktur generieren
             string treeJson = bomGenerator.GenerateBOM(instanceObject, explode);
 
+            // Liste für alle Anhänge
+            List<string> attachmentFiles = new List<string>();
+
             // Anhänge sammeln, wenn gewünscht
-            List<string> attachmentFiles = null;
             if (includeAttachments)
             {
-                attachmentFiles = GetAttachmentFiles();
-                if (attachmentFiles == null)
+                var selectedFiles = GetAttachmentFiles();
+                if (selectedFiles == null)
                     return Result.Cancel;
+                attachmentFiles.AddRange(selectedFiles);
+            }
+
+            // Ausgabeverzeichnis für Dateien
+            string outputDir = null;
+            if (includeAttachments || captureViews)
+            {
+                // Ausgabeverzeichnis auswählen
+                string defaultPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
+                outputDir = SelectFolder("Ausgabeverzeichnis auswählen", defaultPath);
+                if (string.IsNullOrEmpty(outputDir))
+                    return Result.Cancel;
+            }
+
+            // Block-Ansichten erstellen, wenn gewünscht
+            if (captureViews)
+            {
+                var viewCapture = new ViewCapture(doc, outputDir);
+                var capturedImages = viewCapture.CaptureBlockViews(instanceObject);
+                attachmentFiles.AddRange(capturedImages);
             }
 
             // Exportieren
@@ -87,41 +115,39 @@ namespace RhinoPartlistBrowser
             if (optionResult != Result.Success)
                 return Result.Cancel;
 
-            // Ausgabeverzeichnis, falls Export gewünscht
-            string outputDir = null;
-            if (exportToDisk)
+            // Ausgabeverzeichnis, falls Export gewünscht und noch nicht festgelegt
+            if (exportToDisk && string.IsNullOrEmpty(outputDir))
             {
-                // Ausgabeverzeichnis auswählen
                 string defaultPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
                 outputDir = SelectFolder("Ausgabeverzeichnis auswählen", defaultPath);
                 if (string.IsNullOrEmpty(outputDir))
                     return Result.Cancel;
+            }
 
-                // CSV-Export
-                bool exportCsv = false;
-                optionResult = RhinoGet.GetBool("CSV-Datei exportieren", false, "Nein", "Ja", ref exportCsv);
-                if (optionResult == Result.Success && exportCsv)
-                {
-                    string csvPath = Path.Combine(outputDir, $"BOM_{instanceObject.InstanceDefinition.Name}_{DateTime.Now:yyyyMMdd}.csv");
-                    bomGenerator.ExportToCSV(instanceObject, explode, csvPath);
-                    
-                    // Blattknoten als separate CSV
-                    string leafCsvPath = Path.Combine(outputDir, $"BOM_LeafNodes_{instanceObject.InstanceDefinition.Name}_{DateTime.Now:yyyyMMdd}.csv");
-                    bomGenerator.ExportLeafNodesToCSV(instanceObject, explode, leafCsvPath);
-                }
+            // CSV-Export
+            bool exportCsv = false;
+            optionResult = RhinoGet.GetBool("CSV-Datei exportieren", false, "Nein", "Ja", ref exportCsv);
+            if (optionResult == Result.Success && exportCsv)
+            {
+                string csvPath = Path.Combine(outputDir, $"BOM_{instanceObject.InstanceDefinition.Name}_{DateTime.Now:yyyyMMdd}.csv");
+                bomGenerator.ExportToCSV(instanceObject, explode, csvPath);
+                
+                // Blattknoten als separate CSV
+                string leafCsvPath = Path.Combine(outputDir, $"BOM_LeafNodes_{instanceObject.InstanceDefinition.Name}_{DateTime.Now:yyyyMMdd}.csv");
+                bomGenerator.ExportLeafNodesToCSV(instanceObject, explode, leafCsvPath);
+            }
 
-                // JSON-Export
-                bool exportJson = false;
-                optionResult = RhinoGet.GetBool("JSON-Datei exportieren", false, "Nein", "Ja", ref exportJson);
-                if (optionResult == Result.Success && exportJson)
-                {
-                    string jsonPath = Path.Combine(outputDir, $"BOM_{instanceObject.InstanceDefinition.Name}_{DateTime.Now:yyyyMMdd}.json");
-                    bomGenerator.ExportToJSON(instanceObject, explode, jsonPath);
-                    
-                    // Blattknoten als separate JSON
-                    string leafJsonPath = Path.Combine(outputDir, $"BOM_LeafNodes_{instanceObject.InstanceDefinition.Name}_{DateTime.Now:yyyyMMdd}.json");
-                    bomGenerator.ExportLeafNodesToJSON(instanceObject, explode, leafJsonPath);
-                }
+            // JSON-Export
+            bool exportJson = false;
+            optionResult = RhinoGet.GetBool("JSON-Datei exportieren", false, "Nein", "Ja", ref exportJson);
+            if (optionResult == Result.Success && exportJson)
+            {
+                string jsonPath = Path.Combine(outputDir, $"BOM_{instanceObject.InstanceDefinition.Name}_{DateTime.Now:yyyyMMdd}.json");
+                bomGenerator.ExportToJSON(instanceObject, explode, jsonPath);
+                
+                // Blattknoten als separate JSON
+                string leafJsonPath = Path.Combine(outputDir, $"BOM_LeafNodes_{instanceObject.InstanceDefinition.Name}_{DateTime.Now:yyyyMMdd}.json");
+                bomGenerator.ExportLeafNodesToJSON(instanceObject, explode, leafJsonPath);
             }
 
             // Anzeige im Browser
